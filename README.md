@@ -43,5 +43,5 @@ The GUI package that provides a PyQt5 rqt plugin interface to:
 - `ros2 launch robodog_gpt robodog_launch.py`
 
 ## 4. Docker Support
-Build with `docker build -t robodog:latest -f src/robodog_gpt/docker/Dockerfile .`
-Run with `docker run -it robodog:latest`
+- Build with `docker build -t robodog:latest -f src/robodog_gpt/docker/Dockerfile .`
+- Run with `docker run -it robodog:latest`
