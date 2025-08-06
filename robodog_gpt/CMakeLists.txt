@@ -19,12 +19,25 @@ find_package(CURL REQUIRED)
 # Service definition
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Comms.srv"
+  "srv/Audio.srv"
   DEPENDENCIES builtin_interfaces
 )
 
 # Executables
 add_executable(control src/control.cpp)
 target_include_directories(control PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_legged_sdk/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_ros2_to_real/include
+)
+
+add_executable(audio src/audio.cpp
+    src/audio.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/miniaudio/miniaudio.c
+)
+target_include_directories(audio PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/miniaudio
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/whisper.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_legged_sdk/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_ros2_to_real/include
 )
@@ -41,11 +54,19 @@ ament_target_dependencies(control
   rclcpp
   geometry_msgs
   ros2_unitree_legged_msgs
+  rosidl_default_runtime
 )
 
 ament_target_dependencies(gpt_node
   rclcpp
   ros2_unitree_legged_msgs
+  rosidl_default_runtime
+)
+
+ament_target_dependencies(audio
+  rclcpp
+  ros2_unitree_legged_msgs
+  rosidl_default_runtime
 )
 
 # Typesupport and linking
@@ -61,10 +82,15 @@ target_link_libraries(gpt_node
   CURL::libcurl
 )
 
+target_link_libraries(audio
+  ${cpp_typesupport_target}
+)
+
 # Install and export
 install(TARGETS
   control
   gpt_node
+  audio
   DESTINATION lib/${PROJECT_NAME}
 )
 

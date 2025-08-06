@@ -22,6 +22,13 @@ def generate_launch_description():
             ),
 
             Node(
+                package='robodog_gpt',
+                executable='audio',
+                name='audio',
+                output='screen',
+            ),
+
+            Node(
                 package='robodog_rqt',
                 executable='gui_node',
                 name='robodog_gui',

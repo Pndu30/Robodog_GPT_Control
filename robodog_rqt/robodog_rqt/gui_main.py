@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 from threading import Thread
 
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QTextEdit, QLabel
@@ -13,7 +13,8 @@ class ControlGUI(Node):
     def __init__(self):
         super().__init__("control_gui")
         self.twist_pub = self.create_publisher(Twist, 'control', 10)
-        self.cmd_pub = self.create_publisher(String, 'cmd', 10)
+        self.msg_pub = self.create_publisher(String, 'msg', 10)
+        self.audio_pub = self.create_publisher(Bool, 'audio', 10)
 
     def send_twist(self, x, y, z):
         t = Twist()
@@ -22,10 +23,16 @@ class ControlGUI(Node):
         t.angular.z = z
         self.twist_pub.publish(t)
 
-    def send_command(self, command):
+    def send_msg(self, command):
         msg = String()
         msg.data = command
-        self.cmd_pub.publish(msg)
+        self.msg_pub.publish(msg)
+
+    def send_audio(self, order):
+        cmd = Bool()
+        cmd.data = order
+        self.audio_pub.publish(cmd)
+
 
 class CommandTextEdit(QTextEdit):
     def __init__(self, on_enter=None, parent=None):
@@ -49,9 +56,15 @@ class GUI(QWidget):
     def init_ui(self):
         self.setWindowTitle("Robodog Controller")
 
-        self.text_box = CommandTextEdit(on_enter=self.handle_command)
-        send_cmd_btn = QPushButton("Send Command")
-        send_cmd_btn.clicked.connect(self.handle_command)
+        self.text_box = CommandTextEdit(on_enter=self.handle_msg)
+        send_msg_btn = QPushButton("Send Command")
+        send_msg_btn.clicked.connect(lambda: self.handle_msg)
+
+        audio_rec_btn = QPushButton("Start Record")
+        audio_rec_btn.clicked.connect(lambda: self.handle_audio(True))
+
+        audio_stop_rec = QPushButton("Stop Record")
+        audio_stop_rec.clicked.connect(lambda: self.handle_audio(False))
 
         forward_btn = QPushButton('Forward')
         forward_btn.clicked.connect(lambda: self.ros_node.send_twist(0.4, 0.0, 0.0))
@@ -80,7 +93,10 @@ class GUI(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Enter GPT Command:"))
         layout.addWidget(self.text_box)
-        layout.addWidget(send_cmd_btn)
+        layout.addWidget(send_msg_btn)
+        layout.addWidget(QLabel("Audio Controls:"))
+        layout.addWidget(audio_rec_btn)
+        layout.addWidget(audio_stop_rec)
         layout.addWidget(QLabel("Manual Controls:"))
         layout.addWidget(forward_btn)
         layout.addWidget(backward_btn)
@@ -92,9 +108,12 @@ class GUI(QWidget):
         self.setLayout(layout)
 
 
-    def handle_command(self):
-        cmd = self.text_box.toPlainText()
-        self.ros_node.send_command(cmd)
+    def handle_msg(self):
+        msg = self.text_box.toPlainText()
+        self.ros_node.send_msg(msg)
+    
+    def handle_audio(self, order):
+        self.ros_node.send_audio(order)
 
 
 def main():
