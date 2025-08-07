@@ -29,3 +29,5 @@ COLCON_IGNORE
 AMENT_IGNORE
 
 robodog_gpt/include
+robodog_rqt/include
+.vscode
