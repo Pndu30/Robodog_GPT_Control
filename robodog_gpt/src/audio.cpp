@@ -3,6 +3,8 @@
 #include "miniaudio.h"
 
 #include <fstream>
+#include <sstream>
+#include <iostream>
 #include <string>
 #include <cstdio>
 #include <thread>
@@ -62,21 +64,25 @@ void recording_function() {
 
 
 std::string postprocess(){
-    std::string command = "./main -l en -nt -otxt " + WAV_PATH;
+    std::string command = "./include/whisper.cpp/build/bin/whisper-cli -m ./include/whisper.cpp/models/ggml-base.en.bin -nt -otxt " + WAV_PATH + " > /dev/null 2>&1";
     
-    FILE* pipe = popen(command.c_str(), "r");
-    if (!pipe) {
+    int ret_code = system(command.c_str());
+    if (ret_code != 0) {
         RCLCPP_ERROR(rclcpp::get_logger("audio_service"), "Audio postprocessing error");
-        return "ERROR";
+        std::cerr << "Whisper command failed.\n";
     }
 
-    std::string result;
-    char buffer[256];
-    while (fgets(buffer, sizeof(buffer), pipe)) {
-        result += buffer;
+    std::ifstream infile("temp.wav.txt");
+    std::string out; 
+    if (!infile) {
+        RCLCPP_ERROR(rclcpp::get_logger("audio_service"), "Audio postprocessing error");
+        std::cerr << "Failed to open temp.wav.txt\n";
+    } else {
+        std::stringstream buffer;
+        buffer << infile.rdbuf();
+        out = buffer.str();
     }
-    pclose(pipe);
-    return result;
+    return out;
 }
 
 void audio_req(const std::shared_ptr<robodog_gpt::srv::Audio::Request> request, 

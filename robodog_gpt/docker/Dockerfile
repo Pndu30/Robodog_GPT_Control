@@ -12,10 +12,20 @@ WORKDIR /ros2_ws/src
 
 RUN git clone https://github.com/unitreerobotics/unitree_legged_sdk.git
 RUN git clone https://github.com/unitreerobotics/unitree_ros2_to_real.git
-RUN git clone https://github.com/olrea/openai-cpp.git
 RUN mv unitree_ros2_to_real/ros2_unitree_legged_msgs .
 
 COPY ./robodog_gpt ./robodog_gpt
+
+RUN mkdir -p robodog_gpt/include && \
+    cd robodog_gpt/include && \
+    git clone https://github.com/olrea/openai-cpp.git && \
+    git clone https://github.com/ggml-org/whisper.cpp.git && \
+    git clone https://github.com/mackron/miniaudio.git
+
+RUN cd robodog_gpt/include/whisper.cpp && \
+    sh ./models/download-ggml-model.sh small.en && \
+    cmake -B build && \
+    cmake --build build -j --config Release
 
 # Build your code
 SHELL ["/bin/bash", "-c"]

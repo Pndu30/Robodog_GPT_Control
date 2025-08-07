@@ -49,6 +49,14 @@ mkdir include
 cd include
 ```
 - Clone [`openai-cpp`](https://github.com/olrea/openai-cpp),  [`Whisper.cpp`](https://github.com/ggml-org/whisper.cpp), and [`miniaudio`](https://github.com/mackron/miniaudio)
+- Set up Whisper.cpp
+```bash
+cd whisper.cpp
+sh ./models/download-ggml-model.sh small.en # (Recommended to change to medium.en or large.en)
+cmake -B build
+cmake --build build -j --config Release
+```
+- Build the packages and launch
 ```bash
 cd ~/ros2_ws
 source /opt/ros/humble/setup.bash
