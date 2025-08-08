@@ -43,8 +43,8 @@ cd /ros2_ws/src
 - Clone [`unitree_legged_sdk`](https://github.com/unitreerobotics/unitree_legged_sdk) and [`unitree_ros2_to_real`](https://github.com/unitreerobotics/unitree_ros2_to_real) here
 - Clone this package here
 ```bash
-mv unitree_ros2_to_real/ros2_unitree_legged_msgs
-cd robodog_gpt
+mv unitree_ros2_to_real/ros2_unitree_legged_msgs .
+cd Robodog_GPT_Control
 mkdir include
 cd include
 ```
