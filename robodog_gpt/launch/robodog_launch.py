@@ -5,7 +5,7 @@ from launch_ros.actions import Node, PushRosNamespace
 def generate_launch_description():
     return LaunchDescription([
         GroupAction([
-            PushRosNamespace("robodog"),
+            # PushRosNamespace("robodog"),
 
             Node(
                 package="robodog_gpt",

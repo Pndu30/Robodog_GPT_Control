@@ -5,6 +5,7 @@
 #include "ros2_unitree_legged_msgs/msg/high_state.hpp"
 #include "ros2_unitree_legged_msgs/msg/low_cmd.hpp"
 #include "ros2_unitree_legged_msgs/msg/low_state.hpp"
+#include "ros2_unitree_legged_msgs/msg/bms_cmd.hpp"
 
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
 
@@ -39,9 +40,11 @@ class Control : public rclcpp::Node{
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr msg_sub;
         rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr audio_sub;
         rclcpp::TimerBase::SharedPtr timer;
+        rclcpp::Subscription<ros2_unitree_legged_msgs::msg::BmsCmd>::SharedPtr connection_checker;
         
         bool use_gpt = false;
         bool use_audio = false;
+        bool connected = false;
         long motiontime = 0;
         rclcpp::Time last_twist_time;
         geometry_msgs::msg::Twist latest_twist;
@@ -51,6 +54,7 @@ class Control : public rclcpp::Node{
         void msg_callback(const std_msgs::msg::String::SharedPtr cmd);
         void audio_callback(const std_msgs::msg::Bool::SharedPtr state);
         void control_loop();
+        void check_connection(const ros2_unitree_legged_msgs::msg::BmsCmd::SharedPtr connection);
     
 
     public:
@@ -63,11 +67,16 @@ class Control : public rclcpp::Node{
             audio_sub = this->create_subscription<std_msgs::msg::Bool>("audio", 10, [this](const std_msgs::msg::Bool::SharedPtr state) {this->audio_callback(state);});
             timer = this->create_wall_timer(2s, std::bind(&Control::control_loop, this));
             last_twist_time = this->now();
+            connection_checker = this->create_subscription<ros2_unitree_legged_msgs::msg::BmsCmd>("bms_cmd", rclcpp::SensorDataQoS(), [this](const ros2_unitree_legged_msgs::msg::BmsCmd::SharedPtr connection) {this->check_connection(connection);});
         }
         
         void send_written_command(const std::string &input);
 
 };
+
+void Control::check_connection(const ros2_unitree_legged_msgs::msg::BmsCmd::SharedPtr connection){
+    connected = (connection && connection->off != 0xA5);
+}
 
 void Control::send_written_command(const std::string &input){
     auto request = std::make_shared<robodog_gpt::srv::Comms::Request>();
@@ -192,7 +201,7 @@ void Control::control_loop(){
         }
     }
     
-    pub->publish(high_cmd_ros);
+    if (connected) pub->publish(high_cmd_ros);
 }
 
 

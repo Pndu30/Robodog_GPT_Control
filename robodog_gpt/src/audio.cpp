@@ -12,7 +12,6 @@
 #include <vector>
 #include <filesystem>
 
-
 std::string WAV_PATH = "temp.wav";
 namespace fs = std::filesystem;
 std::atomic<bool> recording(false);
