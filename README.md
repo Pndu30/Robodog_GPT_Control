@@ -44,7 +44,9 @@ cd /ros2_ws/src
 - Clone this package here
 ```bash
 mv unitree_ros2_to_real/ros2_unitree_legged_msgs .
-cd Robodog_GPT_Control
+mv Robodog_GPT_Control/robodog_gpt .
+mv Robodog_GPT_Control/robodog_rqt .
+cd robodog_gpt
 mkdir include
 cd include
 ```
