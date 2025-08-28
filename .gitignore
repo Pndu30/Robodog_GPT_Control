@@ -32,3 +32,6 @@ robodog_gpt/include
 robodog_rqt/include
 .vscode
 *.env
+ros2_unitree_legged_msgs/
+unitree_legged_sdk/
+unitree_ros2_to_real/
