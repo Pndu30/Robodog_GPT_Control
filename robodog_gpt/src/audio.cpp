@@ -71,7 +71,10 @@ void recording_function() {
 
 
 std::string postprocess(){
-    std::string command = "./include/whisper.cpp/build/bin/whisper-cli -m ./include/whisper.cpp/models/ggml-base.en.bin -nt -otxt " + WAV_PATH;
+    std::string WHISPER_BIN = "/home/robodog/ros2_ws/src/robodog_gpt/include/whisper.cpp/build/bin/whisper-cli";
+    std::string WHISPER_MODEL = "/home/robodog/ros2_ws/src/robodog_gpt/include/whisper.cpp/models/ggml-small.en.bin";
+
+    std::string command = WHISPER_BIN + " -m " + WHISPER_MODEL + " -nt -otxt " + WAV_PATH;
     
     int ret_code = system(command.c_str());
     if (ret_code != 0) {

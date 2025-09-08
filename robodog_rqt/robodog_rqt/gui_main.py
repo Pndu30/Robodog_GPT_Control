@@ -18,9 +18,9 @@ class ControlGUI(Node):
 
     def send_twist(self, x, y, z):
         t = Twist()
-        t.linear.x = x
-        t.linear.y = y
-        t.angular.z = z
+        t.linear.x = float(x)
+        t.linear.y = float(y)
+        t.angular.z = float(z)
         self.twist_pub.publish(t)
 
     def send_msg(self, command):
@@ -58,37 +58,42 @@ class GUI(QWidget):
 
         self.text_box = CommandTextEdit(on_enter=self.handle_msg)
         send_msg_btn = QPushButton("Send Command")
-        send_msg_btn.clicked.connect(lambda: self.handle_msg)
+        # FIX: Corrected the connect call to properly invoke the method
+        send_msg_btn.clicked.connect(self.handle_msg)
 
         audio_rec_btn = QPushButton("Start Record")
         audio_rec_btn.clicked.connect(lambda: self.handle_audio(True))
 
         audio_stop_rec = QPushButton("Stop Record")
         audio_stop_rec.clicked.connect(lambda: self.handle_audio(False))
-
-        forward_btn = QPushButton('Forward')
+        
+        forward_btn = QPushButton('Forward (W)')
         forward_btn.clicked.connect(lambda: self.ros_node.send_twist(0.4, 0.0, 0.0))
         QShortcut(QKeySequence("W"), self, lambda: self.ros_node.send_twist(0.4, 0.0, 0.0))
         
-        backward_btn = QPushButton('Backward')
+        backward_btn = QPushButton('Backward (S)')
         backward_btn.clicked.connect(lambda: self.ros_node.send_twist(-0.4, 0.0, 0.0))
         QShortcut(QKeySequence("S"), self, lambda: self.ros_node.send_twist(-0.4, 0.0, 0.0))
         
-        right_btn = QPushButton('Right')
+        right_btn = QPushButton('Strafe Right (D)')
         right_btn.clicked.connect(lambda: self.ros_node.send_twist(0.0, 0.4, 0.0))
-        QShortcut(QKeySequence("A"), self, lambda: self.ros_node.send_twist(0.0, 0.4, 0.0))   
+        QShortcut(QKeySequence("D"), self, lambda: self.ros_node.send_twist(0.0, 0.4, 0.0))   
         
-        left_btn = QPushButton('Left')
+        left_btn = QPushButton('Strafe Left (A)')
         left_btn.clicked.connect(lambda: self.ros_node.send_twist(0.0, -0.4, 0.0))
-        QShortcut(QKeySequence("D"), self, lambda: self.ros_node.send_twist(0.0, -0.4, 0.0))  
+        QShortcut(QKeySequence("A"), self, lambda: self.ros_node.send_twist(0.0, -0.4, 0.0))  
 
-        rotate_left_btn = QPushButton('Rotate Left')
-        rotate_left_btn.clicked.connect(lambda: self.ros_node.send_twist(0.0, 0.0, 0.4))
-        QShortcut(QKeySequence("Q"), self, lambda: self.ros_node.send_twist(0.0, 0.0, 0.4))   
+        rotate_left_btn = QPushButton('Rotate Left (Q)')
+        rotate_left_btn.clicked.connect(lambda: self.ros_node.send_twist(0.0, 0.0, -0.4))
+        QShortcut(QKeySequence("Q"), self, lambda: self.ros_node.send_twist(0.0, 0.0, -0.4))   
         
-        rotate_right_btn = QPushButton('Rotate Right')
-        rotate_right_btn.clicked.connect(lambda: self.ros_node.send_twist(0.0, 0.0, -0.4))
-        QShortcut(QKeySequence("E"), self, lambda: self.ros_node.send_twist(0.0, 0.0, -0.4))  
+        rotate_right_btn = QPushButton('Rotate Right (E)')
+        rotate_right_btn.clicked.connect(lambda: self.ros_node.send_twist(0.0, 0.0, 0.4))
+        QShortcut(QKeySequence("E"), self, lambda: self.ros_node.send_twist(0.0, 0.0, 0.4))  
+        
+        stop_btn = QPushButton('STOP (Space)')
+        stop_btn.clicked.connect(lambda: self.ros_node.send_twist(0.0, 0.0, 0.0))
+        QShortcut(QKeySequence("Space"), self, lambda: self.ros_node.send_twist(0.0, 0.0, 0.0))
 
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Enter GPT Command:"))
@@ -100,10 +105,11 @@ class GUI(QWidget):
         layout.addWidget(QLabel("Manual Controls:"))
         layout.addWidget(forward_btn)
         layout.addWidget(backward_btn)
-        layout.addWidget(right_btn)
         layout.addWidget(left_btn)
-        layout.addWidget(rotate_right_btn)
+        layout.addWidget(right_btn)
         layout.addWidget(rotate_left_btn)
+        layout.addWidget(rotate_right_btn)
+        layout.addWidget(stop_btn)
 
         self.setLayout(layout)
 
@@ -111,6 +117,7 @@ class GUI(QWidget):
     def handle_msg(self):
         msg = self.text_box.toPlainText()
         self.ros_node.send_msg(msg)
+        self.text_box.clear()
     
     def handle_audio(self, order):
         self.ros_node.send_audio(order)

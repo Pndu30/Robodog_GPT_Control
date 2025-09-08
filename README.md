@@ -40,8 +40,9 @@ pip3 install PyQt5
 mkdir /ros2_ws/src
 cd /ros2_ws/src
   ```
-- Clone [`unitree_legged_sdk`](https://github.com/unitreerobotics/unitree_legged_sdk) and [`unitree_ros2_to_real`](https://github.com/unitreerobotics/unitree_ros2_to_real) here
-- Clone this package here
+
+#### 3.1 Setting up Dependencies
+- Clone [`unitree_legged_sdk`](https://github.com/unitreerobotics/unitree_legged_sdk) and [`unitree_ros2_to_real`](https://github.com/unitreerobotics/unitree_ros2_to_real) here and build all of them (i.e. clone the SDK into unitree_ros2_to_real and build both SDKs)
 ```bash
 mv unitree_ros2_to_real/ros2_unitree_legged_msgs .
 mv Robodog_GPT_Control/robodog_gpt .
@@ -50,6 +51,9 @@ cd robodog_gpt
 mkdir include
 cd include
 ```
+- Fix unitree_ros2_to_real by changing `low_udp(LOWLEVEL)` to `low_udp(LOWLEVEL, 8090, "192.168.123.10", 8007)` in `unitree_ros2_to_real/src/ros2_udp.cpp`
+- Make sure to change the `unitree_legged_sdk-master` in the cmake file of of unitree_ros2_to_real to `unitree_legged_sdk`
+
 - Clone [`openai-cpp`](https://github.com/olrea/openai-cpp),  [`Whisper.cpp`](https://github.com/ggml-org/whisper.cpp), and [`miniaudio`](https://github.com/mackron/miniaudio)
 - Set up Whisper.cpp
 ```bash
@@ -58,13 +62,26 @@ sh ./models/download-ggml-model.sh small.en # (Recommended to change to medium.e
 cmake -B build
 cmake --build build -j --config Release
 ```
-- Build the packages and launch
+
+#### 3.2 Setting up Parameters
+- Change `setup.sh` in `robodog_gpt/setup.sh` so that it uses your designated robot's IP, Raspberry Pi's IP, and your OpenAI API key
+
+#### 3.3 Build the packages and launch
 ```bash
 cd ~/ros2_ws
-source /opt/ros/humble/setup.bash
+source ./opt/ros/humble/setup.bash
 rosdep install --from-paths src --ignore-src -r -y
 colcon build
 source ~/ros2_ws/install/setup.bash
+source ./src/robodog_gpt/setup.sh
+```
+- On one terminal run 
+```bash
+ros2 run unitree_legged_real ros2_udp highlevel
+
+```
+- And on another run
+```bash
 ros2 launch robodog_gpt robodog_launch.py
 ```
 
