@@ -1,5 +1,8 @@
 #include "rclcpp/rclcpp.hpp"
+#include "robodog_gpt/audio.hpp"
 #include "robodog_gpt/srv/audio.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "miniaudio.h"
 
 #include <fstream>
@@ -22,12 +25,43 @@ std::thread recording_thread;
 ma_encoder encoder;
 ma_device device;
 
-void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount){
+class AudioNode : public rclcpp::Node {
+    private:
+        rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr audio_sub_;
+        rclcpp::Publisher<std_msgs::msg::String>::SharedPtr gpt_pub_;
+
+        bool setup_success_;
+        int sample_rate;
+
+        void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount);
+        bool record_setup();
+        void recording_function();
+        std::string postprocess();
+        void audio_callback(const std_msgs::msg::Bool::SharedPtr msg);
+    
+    public:
+            AudioNode() : rclcpp::Node("audio_node"){
+                setup_success_ = this->record_setup();
+                sample_rate = 44100;
+                if (!setup_success_){
+                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Audio setup failed");
+                }
+
+                audio_sub_ = this->create_subscription<std_msgs::msg::Bool>("/audio", 10, std::bind(&AudioNode::audio_callback, this, std::placeholders::_1));
+                gpt_pub_ = this->create_publisher<std_msgs::msg::String>("/comms", 10);
+
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Audio service ready.");
+            };
+
+
+};
+
+void AudioNode::data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount){
     ma_encoder_write_pcm_frames((ma_encoder*)pDevice->pUserData, pInput, frameCount, NULL);
     (void)pOutput;
 }
 
-bool record_setup(int sample_rate=44100){
+bool AudioNode::record_setup(){
     ma_encoder_config encoder_config = ma_encoder_config_init(ma_encoding_format_wav, ma_format_s16, 1, sample_rate);
     ma_result res = ma_encoder_init_file(WAV_PATH.c_str(), &encoder_config, &encoder);
     if (res != MA_SUCCESS) {
@@ -40,7 +74,7 @@ bool record_setup(int sample_rate=44100){
     device_config.capture.format   = encoder.config.format;
     device_config.capture.channels = encoder.config.channels;
     device_config.sampleRate       = encoder.config.sampleRate;
-    device_config.dataCallback     = data_callback;
+    device_config.dataCallback     = AudioNode::data_callback;
     device_config.pUserData        = &encoder;
 
     res = ma_device_init(NULL, &device_config, &device);
@@ -52,7 +86,7 @@ bool record_setup(int sample_rate=44100){
     return true;
 }
 
-void recording_function() {
+void AudioNode::recording_function() {
     ma_result res = ma_device_start(&device);
     if (res != MA_SUCCESS) {
         ma_device_uninit(&device);
@@ -70,7 +104,7 @@ void recording_function() {
 }
 
 
-std::string postprocess(){
+std::string AudioNode::postprocess(){
     std::string WHISPER_BIN = "/home/robodog/ros2_ws/src/robodog_gpt/include/whisper.cpp/build/bin/whisper-cli";
     std::string WHISPER_MODEL = "/home/robodog/ros2_ws/src/robodog_gpt/include/whisper.cpp/models/ggml-small.en.bin";
 
@@ -95,22 +129,20 @@ std::string postprocess(){
     return out;
 }
 
-void audio_req(const std::shared_ptr<robodog_gpt::srv::Audio::Request> request, 
-                std::shared_ptr<robodog_gpt::srv::Audio::Response> response){
-    if (request->trigger) {
+void AudioNode::audio_callback(const std_msgs::msg::Bool::SharedPtr msg){
+    if (msg->data) {
         if (recording) {
              RCLCPP_WARN(rclcpp::get_logger("audio_service"), "Already recording.");
             return;
         }
         
-        // FIX: Moved record_setup() here to initialize before every recording.
-        if (!record_setup()) {
+        if (!setup_success_) {
             RCLCPP_ERROR(rclcpp::get_logger("audio_service"), "Record setup failed. Aborting recording.");
             return;
         }
         
         recording = true;
-        recording_thread = std::thread(recording_function);
+        recording_thread = std::thread(&AudioNode::recording_function, this);
         RCLCPP_INFO(rclcpp::get_logger("audio_service"), "Recording started.");
     } else {
         if (!recording) {
@@ -124,7 +156,9 @@ void audio_req(const std::shared_ptr<robodog_gpt::srv::Audio::Request> request,
         RCLCPP_INFO(rclcpp::get_logger("audio_service"), "Recording stopped. Transcribing...");
 
         std::string transcription = postprocess();
-        response->output = transcription;
+        std_msgs::msg::String out;
+        out.data = transcription;
+        gpt_pub_->publish(out);
         RCLCPP_INFO(rclcpp::get_logger("audio_service"), "Transcription: '%s'", transcription.c_str());
 
         if (fs::exists(WAV_PATH)) fs::remove(WAV_PATH);
@@ -134,17 +168,8 @@ void audio_req(const std::shared_ptr<robodog_gpt::srv::Audio::Request> request,
 
 int main(int argc, char* argv[]){
     rclcpp::init(argc, argv);
-    
-
-    std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("audio_service");
-    rclcpp::Service<robodog_gpt::srv::Audio>::SharedPtr sv = node->create_service<robodog_gpt::srv::Audio>("/audio", &audio_req);
-    
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Audio service ready.");
-
-    rclcpp::executors::MultiThreadedExecutor executor;
-    executor.add_node(node);
-    executor.spin();
-
+    auto node = std::make_shared<AudioNode>();
+    rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }

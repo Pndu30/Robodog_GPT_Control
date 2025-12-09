@@ -10,6 +10,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(ros2_unitree_legged_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
@@ -28,6 +29,8 @@ add_executable(control src/control.cpp)
 target_include_directories(control PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_legged_sdk/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_ros2_to_real/include
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
 add_executable(audio src/audio.cpp
@@ -40,6 +43,8 @@ target_include_directories(audio PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include/whisper.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_legged_sdk/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_ros2_to_real/include
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
 add_executable(gpt_node src/gpt_node.cpp)
@@ -48,23 +53,28 @@ target_include_directories(gpt_node PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_legged_sdk/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../unitree_ros2_to_real/include
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
 
 ament_target_dependencies(control
   rclcpp
   geometry_msgs
+  std_msgs
   ros2_unitree_legged_msgs
   rosidl_default_runtime
 )
 
 ament_target_dependencies(gpt_node
   rclcpp
+  std_msgs
   ros2_unitree_legged_msgs
   rosidl_default_runtime
 )
 
 ament_target_dependencies(audio
   rclcpp
+  std_msgs
   ros2_unitree_legged_msgs
   rosidl_default_runtime
 )
@@ -92,6 +102,11 @@ install(TARGETS
   gpt_node
   audio
   DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
 )
 
 install(DIRECTORY
