@@ -19,8 +19,7 @@ find_package(CURL REQUIRED)
 
 # Service definition
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "srv/Comms.srv"
-  "srv/Audio.srv"
+  "msg/Comms.msg"
   DEPENDENCIES builtin_interfaces
 )
 

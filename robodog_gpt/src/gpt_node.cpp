@@ -1,10 +1,9 @@
 #include "rclcpp/rclcpp.hpp"
 #include "openai/openai.hpp"
 #include "nlohmann/json.hpp"
-#include "robodog_gpt/control.hpp"
 #include <string>
 #include "std_msgs/msg/string.hpp"
-#include "robodog_gpt/srv/comms.hpp"
+#include "robodog_gpt/msg/comms.hpp"
 #include "ros2_unitree_legged_msgs/msg/high_cmd.hpp"
 #include "unitree_legged_sdk/unitree_legged_sdk.h"
 #include <functional>
@@ -50,8 +49,8 @@ T safe_get(const nlohmann::json& j, const std::string& key, T default_value) {
 class GPTNode : public rclcpp::Node{
     private:
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr gpt_sub_;
-        rclcpp::Publisher<ros2_unitree_legged_msgs::msg::HighCmd>::SharedPtr gpt_pub_;
-        ros2_unitree_legged_msgs::msg::HighCmd high_cmd;
+        rclcpp::Publisher<robodog_gpt::msg::Comms>::SharedPtr gpt_pub_;
+        robodog_gpt::msg::Comms comms;
 
         void gpt_req(const std_msgs::msg::String::SharedPtr msg);
 
@@ -64,7 +63,7 @@ class GPTNode : public rclcpp::Node{
                 }
                 openai::start(api_key);
                 
-                gpt_pub_ = this->create_publisher<ros2_unitree_legged_msgs::msg::HighCmd>("/control", 10);
+                gpt_pub_ = this->create_publisher<robodog_gpt::msg::Comms>("/control", 10);
                 gpt_sub_ = this->create_subscription<std_msgs::msg::String>("/comms", 10, std::bind(&GPTNode::gpt_req, this, std::placeholders::_1));
                 
                 RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "GPT service ready.");
@@ -93,27 +92,27 @@ void GPTNode::gpt_req(const std_msgs::msg::String::SharedPtr msg) {
             return;
         }
 
-        high_cmd.mode = safe_get<int>(j, "mode", 0);
-        high_cmd.gait_type = safe_get<int>(j, "gait_type", 0);
-        high_cmd.speed_level = safe_get<float>(j, "speed_level", 0.0f);
-        high_cmd.foot_raise_height = safe_get<float>(j, "foot_raise_height", 0.0f);
-        high_cmd.body_height = safe_get<float>(j, "body_height", 0.0f);
-        high_cmd.position[0] = safe_get<float>(j, "position0", 0.0f);
-        high_cmd.position[1] = safe_get<float>(j, "position1", 0.0f);
-        high_cmd.euler[0] = safe_get<float>(j, "euler0", 0.0f);
-        high_cmd.euler[1] = safe_get<float>(j, "euler1", 0.0f);
-        high_cmd.euler[2] = safe_get<float>(j, "euler2", 0.0f);
-        high_cmd.velocity[0] = safe_get<float>(j, "velocity0", 0.0f);
-        high_cmd.velocity[1] = safe_get<float>(j, "velocity1", 0.0f);
-        high_cmd.yaw_speed = safe_get<float>(j, "yaw_speed", 0.0f);
-        high_cmd.reserve = safe_get<int>(j, "reserve", 0);
-        high_cmd.max_motiontime = safe_get<float>(j, "max_motiontime", 2.0f);
+        comms.mode = safe_get<int>(j, "mode", 0);
+        comms.gait_type = safe_get<int>(j, "gait_type", 0);
+        comms.speed_level = safe_get<float>(j, "speed_level", 0.0f);
+        comms.foot_raise_height = safe_get<float>(j, "foot_raise_height", 0.0f);
+        comms.body_height = safe_get<float>(j, "body_height", 0.0f);
+        comms.position[0] = safe_get<float>(j, "position0", 0.0f);
+        comms.position[1] = safe_get<float>(j, "position1", 0.0f);
+        comms.euler[0] = safe_get<float>(j, "euler0", 0.0f);
+        comms.euler[1] = safe_get<float>(j, "euler1", 0.0f);
+        comms.euler[2] = safe_get<float>(j, "euler2", 0.0f);
+        comms.velocity[0] = safe_get<float>(j, "velocity0", 0.0f);
+        comms.velocity[1] = safe_get<float>(j, "velocity1", 0.0f);
+        comms.yaw_speed = safe_get<float>(j, "yaw_speed", 0.0f);
+        comms.reserve = safe_get<int>(j, "reserve", 0);
+        comms.max_motiontime = safe_get<float>(j, "max_motiontime", 2.0f);
 
     } catch (const std::exception& e) {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "An exception occurred during OpenAI request: %s", e.what());
     } 
 
-    gpt_pub_->publish(high_cmd);
+    gpt_pub_->publish(comms);
 
 }
 
