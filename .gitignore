@@ -13,7 +13,7 @@ build/
 # qcreator stuff
 CMakeLists.txt.user
 
-srv/_*.py
+
 *.pcd
 *.pyc
 qtcreator-*
