@@ -17,7 +17,6 @@
 namespace fs = std::filesystem;
 
 std::string WAV_PATH = "temp.wav";
-std::string TXT_PATH = "temp_wav.txt";
 
 ma_encoder encoder;
 ma_device device;
@@ -25,15 +24,16 @@ std::atomic<bool> recording(false);
 std::thread recording_thread;
 
 void AudioNode::data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) {
-    ma_encoder_write_pcm_frames((ma_encoder*)pDevice->pUserData, pInput, frameCount, NULL);
+    if (pInput) {
+        ma_encoder_write_pcm_frames((ma_encoder*)pDevice->pUserData, pInput, frameCount, NULL);
+    }
     (void)pOutput;
 }
 
 AudioNode::AudioNode() : rclcpp::Node("audio_node") {
     audio_pub_ = this->create_publisher<std_msgs::msg::String>("/comms", 10);
     
-    auto audio_sub_ = this->create_subscription<std_msgs::msg::Bool>(
-        "/audio", 10,
+    auto audio_sub_ = this->create_subscription<std_msgs::msg::Bool>("/audio", 10,
         [this](const std_msgs::msg::Bool::SharedPtr msg) {
             if (msg->data) {
                 start_recording();
@@ -122,6 +122,7 @@ void AudioNode::stop_recording() {
     RCLCPP_INFO(rclcpp::get_logger("audio_service"), "Recording stopped. Transcribing...");
     
     // Transcription logic (you'll need to implement or move this)
+    std::string TXT_PATH = WAV_PATH + ".txt";
     std::string WHISPER_BIN = "/home/robodog/ros2_ws/src/robodog_gpt/include/whisper.cpp/build/bin/whisper-cli";
     std::string WHISPER_MODEL = "/home/robodog/ros2_ws/src/robodog_gpt/include/whisper.cpp/models/ggml-small.en.bin";
     

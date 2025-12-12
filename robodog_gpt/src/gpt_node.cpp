@@ -63,7 +63,7 @@ class GPTNode : public rclcpp::Node{
                 }
                 openai::start(api_key);
                 
-                gpt_pub_ = this->create_publisher<robodog_gpt::msg::Comms>("/control", 10);
+                gpt_pub_ = this->create_publisher<robodog_gpt::msg::Comms>("/control_gpt", 10);
                 gpt_sub_ = this->create_subscription<std_msgs::msg::String>("/comms", 10, std::bind(&GPTNode::gpt_req, this, std::placeholders::_1));
                 
                 RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "GPT service ready.");
