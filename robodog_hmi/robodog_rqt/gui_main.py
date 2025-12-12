@@ -12,9 +12,9 @@ from PyQt5.QtCore import Qt
 class ControlGUI(Node):
     def __init__(self):
         super().__init__("control_gui")
-        self.twist_pub = self.create_publisher(Twist, 'control', 10)
-        self.msg_pub = self.create_publisher(String, 'comms', 10)
-        self.audio_pub = self.create_publisher(Bool, 'audio', 10)
+        self.twist_pub = self.create_publisher(Twist, '/control_twist', 10)
+        self.msg_pub = self.create_publisher(String, '/comms', 10)
+        self.audio_pub = self.create_publisher(Bool, '/audio', 10)
 
     def send_twist(self, x, y, z):
         t = Twist()
