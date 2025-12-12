@@ -13,7 +13,7 @@ Handles:
 - Audio recording and Whisper-based transcription
 - Publishes motion commands to `/high_cmd`
 
-### 🔹 `robodog_rqt`
+### 🔹 `robodog_hmi`
 Provides a PyQt5 GUI:
 - Button-based control
 - Integration with GPT services

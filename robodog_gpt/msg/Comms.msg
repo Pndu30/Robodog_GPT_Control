@@ -1,5 +1,3 @@
-string input
----
 uint8 mode 
 uint8 gait_type		   
 uint8 speed_level			   
